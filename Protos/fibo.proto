@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option csharp_namespace = "TestAssignmentGrcp";
+
+package fibo;
+
+// The greeting service definition.
+service Fibo {
+  // Sends a greeting
+  rpc GetFibonacci (PositionsRequest) returns (SequenceReply);
+}
+
+// The request message containing the user's name.
+message PositionsRequest {
+  int32 position = 1;
+}
+
+// The response message containing the greetings.
+message SequenceReply {
+  repeated int32 sequence = 1;
+}
