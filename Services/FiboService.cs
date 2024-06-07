@@ -12,10 +12,17 @@ using TestAssignmentGrcp;
 namespace TestAssignmentGrcp.Services
 {
     public class FiboService(ILogger<FiboService> logger, 
-        IDbContextFactory<TestAssignmentContext> factory) 
+        IDbContextFactory<TestAssignmentContext> factory) :Fibo.FiboBase
     {
 
-        public async Task<List<int>> GetFiboAsync(CancellationToken stoppingToken, int count)
+        public override async Task<SequenceReply> GetFibonacci(PositionsRequest request, ServerCallContext context)
+        {
+            var seq = (await GetFiboAsync(request.Position)).ToList() ?? new List<int>();
+            var sReply = new SequenceReply();
+            sReply.Sequence.AddRange(seq);
+            return sReply;
+        }
+        public async Task<List<int>> GetFiboAsync(int count)
         {
             logger.LogInformation("{ServiceName}: Starting counting fibonacci for sequence of {count} positions", 
                 nameof(FiboService),
@@ -39,7 +46,6 @@ namespace TestAssignmentGrcp.Services
                 for (int i = result.Count; i < count; i++)
                 {
                     result.Add(result[i - 1] + result[i - 2]);
-                    if (stoppingToken.IsCancellationRequested) return result; 
                 }
             }
             List<FiboNumber> newCash = new();
@@ -49,11 +55,10 @@ namespace TestAssignmentGrcp.Services
                 newCash.Add(
                     new FiboNumber { Number = result[i], 
                     Position = i });
-                if (stoppingToken.IsCancellationRequested) return result;
             }
             logger.LogInformation("{ServiceName}: Save cash to database", nameof(FiboService));
             context.FiboNumbers.AddRange(newCash);
-            await context.SaveChangesAsync(stoppingToken);
+            await context.SaveChangesAsync();
             return result;
         }
          
