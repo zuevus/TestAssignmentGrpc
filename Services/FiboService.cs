@@ -17,7 +17,7 @@ namespace TestAssignmentGrcp.Services
 
         public override async Task<SequenceReply> GetFibonacci(PositionsRequest request, ServerCallContext context)
         {
-            var seq = (await GetFiboAsync(request.Position)).ToList() ?? new List<int>();
+            var seq = await GetFiboAsync(request.Position);
             var sReply = new SequenceReply();
             sReply.Sequence.AddRange(seq);
             return sReply;
@@ -29,10 +29,10 @@ namespace TestAssignmentGrcp.Services
                 count);
             using var context = factory.CreateDbContext();
             
-          var cash = await context.FiboNumbers.Where(t => t.Position <= count)
+          var cache = await context.FiboNumbers.Where(t => t.Position <= count)
                 .ToDictionaryAsync(t => t.Position);
-            List<int> result = cash.Select(t => t.Value.Number).ToList();
-            if (cash.Keys.Contains(count-1))
+            List<int> result = cache.OrderBy(t => t.Key).Select(t => t.Value.Number).ToList();
+            if (cache.ContainsKey(count-1))
             {
                 logger.LogInformation("{ServiceName}: Sequence for {count} position has already counted. Cash has been returned.", 
                     nameof(FiboService),
@@ -49,8 +49,8 @@ namespace TestAssignmentGrcp.Services
                 }
             }
             List<FiboNumber> newCash = new();
-            var toDb = result.Skip(cash.Keys.Count()).ToArray();
-            for (int i = cash.Keys.Count(); i < (toDb.Count()+cash.Keys.Count()); i++)
+            var toDb = result.Skip(cache.Keys.Count()).ToArray();
+            for (int i = cache.Keys.Count(); i < (toDb.Count()+ cache.Keys.Count()); i++)
             {
                 newCash.Add(
                     new FiboNumber { Number = result[i], 
